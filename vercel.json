@@ -1,11 +1,4 @@
 {
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "framework": "static",
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/estoque.html"
-    }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null
 }
