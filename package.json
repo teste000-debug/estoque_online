@@ -1,8 +1,4 @@
 {
-  "name": "central-de-estoque",
-  "version": "1.0.0",
-  "description": "Sistema de gerenciamento de estoque - Roçadeiras & Máquinas",
-  "private": true,
-  "keywords": ["estoque", "inventário", "gerenciamento"],
-  "license": "MIT"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null
 }
