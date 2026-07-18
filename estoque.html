@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central de Estoque</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root{
+  --ink:#17191B;
+  --bg:#F3F1EC;
+  --surface:#FFFFFF;
+  --accent:#E8590C;
+  --accent-dark:#C4470A;
+  --green:#2B6E4F;
+  --green-bg:#E6F0EA;
+  --red:#C4161C;
+  --red-bg:#FBE6E5;
+  --amber:#B8860B;
+  --amber-bg:#FBF1D9;
+  --steel:#5B6470;
+  --line:#DEDAD0;
+  --line-strong:#C8C3B6;
+  --sidebar:#1B1D1F;
+  --sidebar-text:#B7BABD;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+.app{ display:flex; min-height:100vh; }
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  width:220px; flex-shrink:0;
+  background:var(--sidebar);
+  color:var(--sidebar-text);
+  display:flex; flex-direction:column;
+  padding:22px 14px;
+  position:sticky; top:0; height:100vh;
+}
+.brand{
+  display:flex; align-items:center; gap:10px;
+  padding:6px 8px 22px 8px;
+  border-bottom:1px solid #313437;
+  margin-bottom:18px;
+}
+.brand-mark{
+  width:34px; height:34px; border-radius:4px;
+  background:var(--accent);
+  display:flex; align-items:center; justify-content:center;
+  transform:rotate(-6deg);
+  flex-shrink:0;
+}
+.brand-mark svg{ width:20px; height:20px; transform:rotate(6deg); }
+.brand-text{ font-family:'Oswald',sans-serif; font-size:15px; letter-spacing:0.04em; color:#fff; text-transform:uppercase; line-height:1.15;}
+.brand-text span{ display:block; font-family:'Inter',sans-serif; font-size:10px; letter-spacing:0.12em; color:#8B8F93; font-weight:500; text-transform:uppercase; margin-top:2px;}
+
+.nav{ display:flex; flex-direction:column; gap:2px; }
+.nav-item{
+  display:flex; align-items:center; gap:11px;
+  padding:11px 12px; border-radius:6px;
+  cursor:pointer; font-size:13.5px; font-weight:600;
+  color:var(--sidebar-text);
+  transition:background .15s, color .15s;
+  user-select:none;
+}
+.nav-item svg{ width:17px; height:17px; flex-shrink:0; opacity:0.85;}
+.nav-item:hover{ background:#26292C; color:#fff; }
+.nav-item.active{ background:var(--accent); color:#fff; }
+.nav-item.active svg{ opacity:1; }
+
+.sidebar-foot{
+  margin-top:auto; padding:12px 10px; border-top:1px solid #313437;
+  font-size:11px; color:#6E7275; line-height:1.5;
+}
+
+/* ---------- Main ---------- */
+.main{ flex:1; min-width:0; padding:26px 34px 60px; }
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; margin-bottom:26px; flex-wrap:wrap;
+}
+.page-title{ font-family:'Oswald',sans-serif; font-size:26px; text-transform:uppercase; letter-spacing:0.01em; }
+.page-sub{ font-size:12.5px; color:var(--steel); margin-top:3px; font-weight:500;}
+
+.btn{
+  display:inline-flex; align-items:center; gap:7px;
+  font-family:'Inter',sans-serif; font-weight:700; font-size:13px;
+  padding:10px 16px; border-radius:6px; border:none; cursor:pointer;
+  transition:transform .1s, box-shadow .15s; letter-spacing:0.01em;
+}
+.btn:active{ transform:scale(0.97); }
+.btn-primary{ background:var(--accent); color:#fff; box-shadow:0 2px 0 var(--accent-dark);}
+.btn-primary:hover{ background:var(--accent-dark); }
+.btn-ghost{ background:transparent; color:var(--ink); border:1.5px solid var(--line-strong); }
+.btn-ghost:hover{ border-color:var(--ink); }
+.btn-sm{ padding:6px 10px; font-size:12px; border-radius:5px; }
+.btn svg{ width:14px; height:14px; }
+
+/* ---------- Dashboard cards ---------- */
+.stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px; }
+.stat-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:18px 18px 16px; position:relative; overflow:hidden;
+}
+.stat-card::before{
+  content:''; position:absolute; top:0; left:0; width:4px; height:100%;
+  background:var(--accent);
+}
+.stat-card.green::before{ background:var(--green); }
+.stat-card.red::before{ background:var(--red); }
+.stat-card.steel::before{ background:var(--steel); }
+.stat-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--steel); font-weight:700; margin-bottom:8px;}
+.stat-value{ font-family:'Oswald',sans-serif; font-size:30px; }
+.stat-hint{ font-size:11.5px; color:var(--steel); margin-top:4px; font-weight:500;}
+
+.panel{
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:20px 20px 22px; margin-bottom:22px;
+}
+.panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+.panel-title{ font-family:'Oswald',sans-serif; font-size:15px; text-transform:uppercase; letter-spacing:0.02em;}
+
+/* Gauge */
+.gauge-row{ display:flex; flex-wrap:wrap; gap:22px; }
+.gauge{ display:flex; flex-direction:column; align-items:center; width:120px; }
+.gauge svg{ width:96px; height:60px; }
+.gauge-cat{ font-size:11.5px; font-weight:700; margin-top:6px; text-align:center; }
+.gauge-num{ font-size:11px; color:var(--steel); font-weight:600; }
+
+/* Hazard banner */
+.hazard-banner{
+  display:flex; align-items:center; gap:12px;
+  background-image:repeating-linear-gradient(135deg, var(--amber-bg) 0 14px, #F7E4B0 14px 28px);
+  border:1.5px solid #E0B84A; border-radius:8px;
+  padding:12px 16px; margin-bottom:22px; font-size:13px; font-weight:600;
+}
+.hazard-banner svg{ width:20px; height:20px; flex-shrink:0; color:var(--amber); }
+.hazard-banner b{ color:var(--red); }
+
+/* ---------- Filters ---------- */
+.filters{ display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+.search-box{
+  flex:1; min-width:220px; display:flex; align-items:center; gap:8px;
+  background:var(--surface); border:1.5px solid var(--line-strong); border-radius:7px;
+  padding:9px 12px;
+}
+.search-box svg{ width:15px; height:15px; color:var(--steel); flex-shrink:0;}
+.search-box input{ border:none; outline:none; font-size:13.5px; width:100%; font-family:'Inter',sans-serif; background:transparent;}
+select, .sel{
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+  padding:9px 12px; border-radius:7px; border:1.5px solid var(--line-strong);
+  background:var(--surface); color:var(--ink); cursor:pointer;
+}
+
+/* ---------- Product grid ---------- */
+.grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:16px; display:flex; flex-direction:column; gap:10px;
+  transition:box-shadow .15s, border-color .15s;
+}
+.card:hover{ box-shadow:0 4px 14px rgba(0,0,0,0.07); border-color:var(--line-strong); }
+.card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+.card-icon{
+  width:40px; height:40px; border-radius:8px; background:#F1EDE3;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.card-icon svg{ width:22px; height:22px; color:var(--steel); }
+.badge{
+  font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em;
+  padding:4px 8px; border-radius:20px; white-space:nowrap;
+}
+.badge.ok{ background:var(--green-bg); color:var(--green); }
+.badge.low{ background:var(--amber-bg); color:var(--amber); }
+.badge.out{ background:var(--red-bg); color:var(--red); }
+.card-name{ font-weight:700; font-size:14.5px; line-height:1.3; }
+.card-cat{ font-size:11.5px; color:var(--steel); font-weight:600; text-transform:uppercase; letter-spacing:0.03em;}
+.card-sku{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#9A968A; }
+.card-bottom{ display:flex; align-items:flex-end; justify-content:space-between; margin-top:auto; padding-top:8px; border-top:1px dashed var(--line); }
+.card-price{ font-family:'Oswald',sans-serif; font-size:17px; }
+.card-stock{ text-align:right; font-size:12px; font-weight:700; }
+.card-stock small{ display:block; font-size:10px; color:var(--steel); font-weight:600; }
+.card-actions{ display:flex; gap:6px; }
+.icon-btn{
+  width:30px; height:30px; border-radius:6px; border:1.5px solid var(--line-strong);
+  background:var(--surface); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color:var(--steel); transition:all .15s;
+}
+.icon-btn:hover{ border-color:var(--ink); color:var(--ink); }
+.icon-btn.danger:hover{ border-color:var(--red); color:var(--red); }
+.icon-btn svg{ width:14px; height:14px; }
+
+/* ---------- Table (Estoque) ---------- */
+.table-wrap{ overflow-x:auto; }
+table{ width:100%; border-collapse:collapse; font-size:13px; }
+thead th{
+  text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em;
+  color:var(--steel); font-weight:800; padding:0 10px 10px; border-bottom:2px solid var(--ink);
+}
+tbody td{ padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+tbody tr:hover{ background:#FAF9F6; }
+.stock-cell{ display:flex; align-items:center; gap:10px; }
+.stock-bar-bg{ width:60px; height:6px; background:var(--line); border-radius:4px; overflow:hidden; }
+.stock-bar-fill{ height:100%; border-radius:4px; background:var(--green); }
+.stock-bar-fill.low{ background:var(--amber); }
+.stock-bar-fill.out{ background:var(--red); }
+.qty-controls{ display:flex; align-items:center; gap:6px; }
+.qty-controls button{
+  width:26px; height:26px; border-radius:5px; border:1.5px solid var(--line-strong);
+  background:var(--surface); cursor:pointer; font-weight:800; font-size:14px; color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+}
+.qty-controls button:hover{ background:var(--ink); color:#fff; border-color:var(--ink); }
+.qty-num{ font-family:'IBM Plex Mono',monospace; font-weight:700; min-width:28px; text-align:center; }
+
+.movement-log{ display:flex; flex-direction:column; gap:0; }
+.mv-item{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+.mv-item:last-child{ border-bottom:none; }
+.mv-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.mv-dot.in{ background:var(--green); }
+.mv-dot.out{ background:var(--red); }
+.mv-name{ font-weight:700; flex:1; }
+.mv-delta{ font-family:'IBM Plex Mono',monospace; font-weight:700; }
+.mv-delta.in{ color:var(--green); }
+.mv-delta.out{ color:var(--red); }
+.mv-time{ color:var(--steel); font-size:11px; width:120px; text-align:right; }
+
+.empty-state{
+  text-align:center; padding:50px 20px; color:var(--steel);
+}
+.empty-state svg{ width:46px; height:46px; margin-bottom:12px; opacity:0.5; }
+.empty-state p{ font-size:13.5px; font-weight:600; margin-bottom:14px;}
+
+/* ---------- Modal ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(23,25,27,0.55);
+  display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+}
+.modal-overlay.open{ display:flex; }
+.modal{
+  background:var(--surface); border-radius:12px; width:100%; max-width:480px;
+  max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);
+}
+.modal-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 22px; border-bottom:1px solid var(--line);
+}
+.modal-title{ font-family:'Oswald',sans-serif; font-size:17px; text-transform:uppercase; }
+.modal-close{ cursor:pointer; width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:var(--steel);}
+.modal-close:hover{ background:var(--bg); color:var(--ink); }
+.modal-body{ padding:20px 22px; display:flex; flex-direction:column; gap:14px; }
+.form-row{ display:flex; gap:12px; }
+.form-group{ flex:1; display:flex; flex-direction:column; gap:6px; }
+.form-group label{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--steel); }
+.form-group input, .form-group select, .form-group textarea{
+  font-family:'Inter',sans-serif; font-size:13.5px; padding:10px 12px;
+  border:1.5px solid var(--line-strong); border-radius:7px; outline:none; background:var(--bg);
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus{ border-color:var(--accent); background:var(--surface); }
+.form-group textarea{ resize:vertical; min-height:60px; font-family:'Inter',sans-serif; }
+.modal-foot{ padding:16px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px; }
+
+.toast{
+  position:fixed; bottom:24px; right:24px; background:var(--ink); color:#fff;
+  padding:12px 18px; border-radius:8px; font-size:13px; font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:200; opacity:0; transform:translateY(8px);
+  transition:opacity .2s, transform .2s; pointer-events:none; display:flex; align-items:center; gap:8px;
+}
+.toast.show{ opacity:1; transform:translateY(0); }
+.toast svg{ width:15px; height:15px; color:var(--accent); }
+
+@media (max-width:900px){
+  .sidebar{ display:none; }
+  .main{ padding:18px; }
+  .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <div class="brand-text">Central de<br>Estoque<span>Máquinas &amp; Roçadeiras</span></div>
+    </div>
+    <div class="nav">
+      <div class="nav-item active" data-tab="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Painel
+      </div>
+      <div class="nav-item" data-tab="catalogo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Catálogo
+      </div>
+      <div class="nav-item" data-tab="estoque">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/></svg>
+        Estoque
+      </div>
+    </div>
+    <div class="sidebar-foot">Dados salvos automaticamente<br>nesta conta.</div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="tab-dashboard">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Painel Geral</div>
+          <div class="page-sub" id="dash-date"></div>
+        </div>
+        <button class="btn btn-primary" onclick="openProductModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Novo produto
+        </button>
+      </div>
+
+      <div id="dash-hazard"></div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Produtos cadastrados</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-hint">itens no catálogo</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Valor em estoque</div>
+          <div class="stat-value" id="stat-value">R$ 0</div>
+          <div class="stat-hint">custo total imobilizado</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Estoque baixo</div>
+          <div class="stat-value" id="stat-low">0</div>
+          <div class="stat-hint">produtos no limite mínimo</div>
+        </div>
+        <div class="stat-card steel">
+          <div class="stat-label">Sem estoque</div>
+          <div class="stat-value" id="stat-out">0</div>
+          <div class="stat-hint">produtos zerados</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Nível de estoque por categoria</div>
+        </div>
+        <div class="gauge-row" id="gauge-row"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Últimas movimentações</div>
+        </div>
+        <div class="movement-log" id="dash-movements"></div>
+      </div>
+    </div>
+
+    <!-- CATALOGO -->
+    <div id="tab-catalogo" style="display:none;">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Catálogo de Produtos</div>
+          <div class="page-sub">Roçadeiras, motosserras, geradores e acessórios</div>
+        </div>
+        <button class="btn btn-primary" onclick="openProductModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Novo produto
+        </button>
+      </div>
+
+      <div class="filters">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="search-input" placeholder="Buscar por nome, marca ou SKU...">
+        </div>
+        <select id="filter-category"></select>
+        <select id="filter-status">
+          <option value="">Todos os status</option>
+          <option value="ok">Em estoque</option>
+          <option value="low">Estoque baixo</option>
+          <option value="out">Sem estoque</option>
+        </select>
+      </div>
+
+      <div class="grid" id="product-grid"></div>
+      <div class="empty-state" id="catalog-empty" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <p>Nenhum produto encontrado</p>
+        <button class="btn btn-primary btn-sm" onclick="openProductModal()">Cadastrar primeiro produto</button>
+      </div>
+    </div>
+
+    <!-- ESTOQUE -->
+    <div id="tab-estoque" style="display:none;">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Controle de Estoque</div>
+          <div class="page-sub">Ajuste quantidades e acompanhe o histórico</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="stock-search-input" placeholder="Buscar produto...">
+        </div>
+        <select id="stock-filter-status">
+          <option value="">Todos os status</option>
+          <option value="ok">Em estoque</option>
+          <option value="low">Estoque baixo</option>
+          <option value="out">Sem estoque</option>
+        </select>
+      </div>
+
+      <div class="panel" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Categoria</th>
+                <th>Estoque</th>
+                <th>Mínimo</th>
+                <th>Ajustar</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="stock-table-body"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="stock-empty" style="display:none;">
+          <p>Nenhum produto no estoque ainda</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Histórico de movimentações</div></div>
+        <div class="movement-log" id="stock-movements"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modal-title">Novo Produto</div>
+      <div class="modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome do produto</label>
+        <input type="text" id="f-name" placeholder="Ex: Roçadeira a Gasolina RG-520">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Categoria</label>
+          <select id="f-category"></select>
+        </div>
+        <div class="form-group">
+          <label>Marca</label>
+          <input type="text" id="f-brand" placeholder="Ex: Stihl">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>SKU / Código</label>
+          <input type="text" id="f-sku" placeholder="Ex: ROC-520-GAS">
+        </div>
+        <div class="form-group">
+          <label>Unidade</label>
+          <select id="f-unit">
+            <option value="un">Unidade</option>
+            <option value="par">Par</option>
+            <option value="kit">Kit</option>
+            <option value="cx">Caixa</option>
+            <option value="l">Litro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Preço de venda (R$)</label>
+          <input type="number" id="f-price" placeholder="0,00" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>Custo (R$)</label>
+          <input type="number" id="f-cost" placeholder="0,00" step="0.01" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Estoque atual</label>
+          <input type="number" id="f-stock" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label>Estoque mínimo</label>
+          <input type="number" id="f-minstock" placeholder="0" min="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Observações</label>
+        <textarea id="f-desc" placeholder="Detalhes técnicos, garantia, etc."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Salvar produto</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+  <span id="toast-text">Salvo</span>
+</div>
+
+<div class="modal-overlay" id="confirm-overlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head">
+      <div class="modal-title" style="color:var(--red);">Excluir produto</div>
+      <div class="modal-close" onclick="closeConfirm()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-text" style="font-size:13.5px; line-height:1.5;">Tem certeza que deseja excluir este produto? Essa ação não pode ser desfeita.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn btn-primary" style="background:var(--red); box-shadow:0 2px 0 #8f1014;" onclick="confirmDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Storage abstraction using localStorage
+window.storage = {
+  get: async function(key) {
+    const value = localStorage.getItem(key);
+    return value ? { value } : null;
+  },
+  set: async function(key, value) {
+    localStorage.setItem(key, value);
+  }
+};
+
+const CATEGORIES = [
+  "Roçadeiras","Motosserras","Cortadores de Grama","Geradores",
+  "Bombas d'Água","Ferramentas Manuais","Peças e Acessórios","Equipamentos de Proteção (EPI)"
+];
+
+let products = [];
+let movements = [];
+let activeTab = 'dashboard';
+let editingId = null;
+
+const ICONS = {
+  default: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'
+};
+
+function fmtMoney(v){
+  return 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function uid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+function statusOf(p){
+  if(p.stock <= 0) return 'out';
+  if(p.stock <= p.minStock) return 'low';
+  return 'ok';
+}
+
+/* ---------------- Storage ---------------- */
+async function loadData(){
+  try{
+    const r = await window.storage.get('products');
+    products = r ? JSON.parse(r.value) : [];
+  }catch(e){ products = []; }
+  try{
+    const r2 = await window.storage.get('movements');
+    movements = r2 ? JSON.parse(r2.value) : [];
+  }catch(e){ movements = []; }
+
+  if(products.length === 0){
+    products = seedProducts();
+    await persistProducts();
+  }
+  renderAll();
+}
+async function persistProducts(){
+  try{ await window.storage.set('products', JSON.stringify(products)); }
+  catch(e){ console.error('Erro ao salvar produtos', e); }
+}
+async function persistMovements(){
+  try{ await window.storage.set('movements', JSON.stringify(movements.slice(0,60))); }
+  catch(e){ console.error('Erro ao salvar movimentações', e); }
+}
+
+function seedProducts(){
+  return [
+    {id:uid(), name:'Roçadeira a Gasolina RG-520', category:'Roçadeiras', brand:'Stihl', sku:'ROC-520-GAS', unit:'un', price:1890, cost:1290, stock:6, minStock:3, desc:'Motor 2 tempos, 52cc.'},
+    {id:uid(), name:'Motosserra 18" MS-380', category:'Motosserras', brand:'Husqvarna', sku:'MOT-380-18', unit:'un', price:2450, cost:1780, stock:2, minStock:3, desc:'Sabre de 18 polegadas.'},
+    {id:uid(), name:'Gerador a Diesel 5kVA', category:'Geradores', brand:'Toyama', sku:'GER-5KVA-D', unit:'un', price:6200, cost:4600, stock:0, minStock:2, desc:'Partida elétrica.'},
+    {id:uid(), name:'Cortador de Grama Elétrico', category:'Cortadores de Grama', brand:'Tramontina', sku:'COR-ELE-42', unit:'un', price:980, cost:650, stock:9, minStock:4, desc:'Lâmina 42cm.'},
+    {id:uid(), name:'Bomba d\'Água 2"', category:"Bombas d'Água", brand:'Honda', sku:'BOM-2POL', unit:'un', price:1450, cost:1020, stock:4, minStock:2, desc:'Motor a gasolina.'},
+    {id:uid(), name:'Óculos de Proteção', category:'Equipamentos de Proteção (EPI)', brand:'3M', sku:'EPI-OCU-01', unit:'un', price:35, cost:18, stock:22, minStock:10, desc:'Antiembaçante.'},
+    {id:uid(), name:'Fio de Nylon para Roçadeira 3mm', category:'Peças e Acessórios', brand:'Genérico', sku:'PEC-FIO-3MM', unit:'kit', price:45, cost:22, stock:1, minStock:5, desc:'Rolo com 15m.'},
+  ];
+}
+
+/* ---------------- Navigation ---------------- */
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    el.classList.add('active');
+    activeTab = el.dataset.tab;
+    document.getElementById('tab-dashboard').style.display = activeTab==='dashboard' ? 'block':'none';
+    document.getElementById('tab-catalogo').style.display = activeTab==='catalogo' ? 'block':'none';
+    document.getElementById('tab-estoque').style.display = activeTab==='estoque' ? 'block':'none';
+    renderAll();
+  });
+});
+
+/* ---------------- Render ---------------- */
+function renderAll(){
+  populateCategorySelects();
+  if(activeTab === 'dashboard') renderDashboard();
+  if(activeTab === 'catalogo') renderCatalog();
+  if(activeTab === 'estoque') renderStock();
+}
+
+function populateCategorySelects(){
+  const filterSel = document.getElementById('filter-category');
+  const formSel = document.getElementById('f-category');
+  if(filterSel.dataset.filled !== '1'){
+    filterSel.innerHTML = '<option value="">Todas categorias</option>' + CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
+    filterSel.dataset.filled = '1';
+  }
+  if(formSel.dataset.filled !== '1'){
+    formSel.innerHTML = CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
+    formSel.dataset.filled = '1';
+  }
+}
+
+const dashDateEl = document.getElementById('dash-date');
+dashDateEl.textContent = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+
+function renderDashboard(){
+  const total = products.length;
+  const value = products.reduce((s,p)=> s + (p.cost||0)*(p.stock||0), 0);
+  const low = products.filter(p=> statusOf(p)==='low').length;
+  const out = products.filter(p=> statusOf(p)==='out').length;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-value').textContent = fmtMoney(value);
+  document.getElementById('stat-low').textContent = low;
+  document.getElementById('stat-out').textContent = out;
+
+  const hazardEl = document.getElementById('dash-hazard');
+  if(low + out > 0){
+    hazardEl.innerHTML = `<div class="hazard-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      <span><b>${low + out}</b> produto${(low+out)>1?'s':''} precisa${(low+out)>1?'m':''} de atenção — ${out} zerado${out!==1?'s':''} e ${low} com estoque baixo.</span>
+    </div>`;
+  } else {
+    hazardEl.innerHTML = '';
+  }
+
+  // Gauges by category
+  const gaugeRow = document.getElementById('gauge-row');
+  gaugeRow.innerHTML = '';
+  CATEGORIES.forEach(cat=>{
+    const items = products.filter(p=> p.category === cat);
+    if(items.length === 0) return;
+    const totalStock = items.reduce((s,p)=>s+p.stock,0);
+    const totalMin = items.reduce((s,p)=>s+Math.max(p.minStock,1),0) || 1;
+    const ratio = Math.min(totalStock / (totalMin*2), 1); // 2x min = full gauge
+    gaugeRow.innerHTML += gaugeSVG(cat, ratio, `${totalStock} un.`);
+  });
+  if(gaugeRow.innerHTML === '') gaugeRow.innerHTML = '<div style="color:var(--steel); font-size:13px;">Cadastre produtos para ver os indicadores.</div>';
+
+  renderMovementLog('dash-movements');
+}
+
+function gaugeSVG(label, ratio, sub){
+  // semicircle gauge, needle angle from -90 to +90
+  const angle = -90 + ratio*180;
+  const rad = angle * Math.PI/180;
+  const cx=48, cy=54, r=40;
+  const nx = cx + r*Math.cos(rad);
+  const ny = cy + r*Math.sin(rad);
+  let color = 'var(--green)';
+  if(ratio < 0.25) color = 'var(--red)';
+  else if(ratio < 0.5) color = 'var(--amber)';
+  return `<div class="gauge">
+    <svg viewBox="0 0 96 60">
+      <path d="M8 54 A40 40 0 0 1 88 54" fill="none" stroke="var(--line)" stroke-width="7" stroke-linecap="round"/>
+      <path d="M8 54 A40 40 0 0 1 88 54" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round"
+        stroke-dasharray="${ratio*125.6} 200"/>
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="4" fill="var(--ink)"/>
+    </svg>
+    <div class="gauge-cat">${label}</div>
+    <div class="gauge-num">${sub}</div>
+  </div>`;
+}
+
+function renderMovementLog(targetId){
+  const el = document.getElementById(targetId);
+  if(movements.length === 0){
+    el.innerHTML = '<div style="color:var(--steel); font-size:13px; padding:6px 0;">Nenhuma movimentação registrada ainda.</div>';
+    return;
+  }
+  el.innerHTML = movements.slice(0,10).map(m=>{
+    const dir = m.delta > 0 ? 'in':'out';
+    return `<div class="mv-item">
+      <div class="mv-dot ${dir}"></div>
+      <div class="mv-name">${m.name}</div>
+      <div class="mv-delta ${dir}">${m.delta>0? '+':''}${m.delta}</div>
+      <div class="mv-time">${m.time}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- Catalog ---------------- */
+function getFilteredProducts(searchId, catId, statusId){
+  const q = (document.getElementById(searchId)?.value || '').toLowerCase().trim();
+  const cat = catId ? document.getElementById(catId).value : '';
+  const status = statusId ? document.getElementById(statusId).value : '';
+  return products.filter(p=>{
+    if(q && !(p.name.toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q))) return false;
+    if(cat && p.category !== cat) return false;
+    if(status && statusOf(p) !== status) return false;
+    return true;
+  });
+}
+
+function renderCatalog(){
+  const list = getFilteredProducts('search-input','filter-category','filter-status');
+  const grid = document.getElementById('product-grid');
+  const empty = document.getElementById('catalog-empty');
+  if(list.length === 0){
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.innerHTML = list.map(p=>{
+    const st = statusOf(p);
+    const badgeText = st==='ok' ? 'Em estoque' : st==='low' ? 'Estoque baixo' : 'Sem estoque';
+    return `<div class="card">
+      <div class="card-top">
+        <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS.default}</svg></div>
+        <div class="badge ${st}">${badgeText}</div>
+      </div>
+      <div>
+        <div class="card-name">${escapeHtml(p.name)}</div>
+        <div class="card-cat">${p.category}</div>
+        <div class="card-sku">${p.brand ? p.brand+' · ':''}${p.sku||'—'}</div>
+      </div>
+      <div class="card-bottom">
+        <div class="card-price">${fmtMoney(p.price)}</div>
+        <div class="card-stock">${p.stock} ${p.unit}<small>mín. ${p.minStock}</small></div>
+      </div>
+      <div class="card-actions">
+        <div class="icon-btn" onclick="openProductModal('${p.id}')" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        </div>
+        <div class="icon-btn danger" onclick="deleteProduct('${p.id}')" title="Excluir">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+['search-input','filter-category','filter-status'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderCatalog);
+  document.getElementById(id).addEventListener('change', renderCatalog);
+});
+
+/* ---------------- Stock tab ---------------- */
+function renderStock(){
+  const list = getFilteredProducts('stock-search-input', null, 'stock-filter-status');
+  const body = document.getElementById('stock-table-body');
+  const empty = document.getElementById('stock-empty');
+  if(list.length === 0){
+    body.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    body.innerHTML = list.map(p=>{
+      const st = statusOf(p);
+      const ratio = Math.min(p.stock / Math.max(p.minStock*2,1), 1);
+      const barClass = st==='ok'?'':st;
+      const badgeText = st==='ok' ? 'Em estoque' : st==='low' ? 'Estoque baixo' : 'Sem estoque';
+      return `<tr>
+        <td><div style="font-weight:700;">${escapeHtml(p.name)}</div><div class="card-sku">${p.sku||'—'}</div></td>
+        <td style="color:var(--steel); font-weight:600; font-size:12.5px;">${p.category}</td>
+        <td>
+          <div class="stock-cell">
+            <div class="stock-bar-bg"><div class="stock-bar-fill ${barClass}" style="width:${ratio*100}%;"></div></div>
+            <span class="qty-num">${p.stock} ${p.unit}</span>
+          </div>
+        </td>
+        <td style="color:var(--steel);">${p.minStock}</td>
+        <td>
+          <div class="qty-controls">
+            <button onclick="adjustStock('${p.id}', -1)">−</button>
+            <span class="qty-num">${p.stock}</span>
+            <button onclick="adjustStock('${p.id}', 1)">+</button>
+          </div>
+        </td>
+        <td><div class="badge ${st}">${badgeText}</div></td>
+      </tr>`;
+    }).join('');
+  }
+  renderMovementLog('stock-movements');
+}
+['stock-search-input','stock-filter-status'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', renderStock);
+  document.getElementById(id).addEventListener('change', renderStock);
+});
+
+async function adjustStock(id, delta){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  const newStock = Math.max(0, p.stock + delta);
+  const actualDelta = newStock - p.stock;
+  if(actualDelta === 0) return;
+  p.stock = newStock;
+  movements.unshift({
+    name: p.name, delta: actualDelta,
+    time: new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
+  });
+  await persistProducts();
+  await persistMovements();
+  renderAll();
+}
+
+/* ---------------- Product Modal ---------------- */
+function openProductModal(id){
+  editingId = id || null;
+  populateCategorySelects();
+  const overlay = document.getElementById('modal-overlay');
+  document.getElementById('modal-title').textContent = id ? 'Editar Produto' : 'Novo Produto';
+  if(id){
+    const p = products.find(x=>x.id===id);
+    document.getElementById('f-name').value = p.name;
+    document.getElementById('f-category').value = p.category;
+    document.getElementById('f-brand').value = p.brand||'';
+    document.getElementById('f-sku').value = p.sku||'';
+    document.getElementById('f-unit').value = p.unit||'un';
+    document.getElementById('f-price').value = p.price;
+    document.getElementById('f-cost').value = p.cost;
+    document.getElementById('f-stock').value = p.stock;
+    document.getElementById('f-minstock').value = p.minStock;
+    document.getElementById('f-desc').value = p.desc||'';
+  } else {
+    ['f-name','f-brand','f-sku','f-desc'].forEach(id=> document.getElementById(id).value='');
+    document.getElementById('f-category').selectedIndex = 0;
+    document.getElementById('f-unit').selectedIndex = 0;
+    document.getElementById('f-price').value = '';
+    document.getElementById('f-cost').value = '';
+    document.getElementById('f-stock').value = 0;
+    document.getElementById('f-minstock').value = 0;
+  }
+  overlay.classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+}
+document.getElementById('modal-overlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'modal-overlay') closeModal();
+});
+
+async function saveProduct(){
+  const name = document.getElementById('f-name').value.trim();
+  if(!name){ showToast('Informe o nome do produto'); return; }
+  const data = {
+    name,
+    category: document.getElementById('f-category').value,
+    brand: document.getElementById('f-brand').value.trim(),
+    sku: document.getElementById('f-sku').value.trim(),
+    unit: document.getElementById('f-unit').value,
+    price: parseFloat(document.getElementById('f-price').value) || 0,
+    cost: parseFloat(document.getElementById('f-cost').value) || 0,
+    stock: parseInt(document.getElementById('f-stock').value) || 0,
+    minStock: parseInt(document.getElementById('f-minstock').value) || 0,
+    desc: document.getElementById('f-desc').value.trim(),
+  };
+  if(editingId){
+    const p = products.find(x=>x.id===editingId);
+    const oldStock = p.stock;
+    Object.assign(p, data);
+    if(oldStock !== p.stock){
+      movements.unshift({ name: p.name, delta: p.stock-oldStock, time: new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) });
+      await persistMovements();
+    }
+    showToast('Produto atualizado');
+  } else {
+    data.id = uid();
+    products.push(data);
+    if(data.stock > 0){
+      movements.unshift({ name: data.name, delta: data.stock, time: new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) });
+      await persistMovements();
+    }
+    showToast('Produto cadastrado');
+  }
+  await persistProducts();
+  closeModal();
+  renderAll();
+}
+
+let pendingDeleteId = null;
+
+function deleteProduct(id){
+  const p = products.find(x=>x.id===id);
+  if(!p) return;
+  pendingDeleteId = id;
+  document.getElementById('confirm-text').textContent = `Tem certeza que deseja excluir "${p.name}" do catálogo? Essa ação não pode ser desfeita.`;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm(){
+  pendingDeleteId = null;
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+async function confirmDelete(){
+  if(!pendingDeleteId) return;
+  products = products.filter(x=>x.id!==pendingDeleteId);
+  await persistProducts();
+  showToast('Produto excluído');
+  closeConfirm();
+  renderAll();
+}
+document.getElementById('confirm-overlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'confirm-overlay') closeConfirm();
+});
+
+/* ---------------- Init ---------------- */
+loadData();
+</script>
+</body>
+</html>

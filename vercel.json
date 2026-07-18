@@ -1,0 +1,11 @@
+{
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "framework": "static",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/estoque.html"
+    }
+  ]
+}

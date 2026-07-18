@@ -1,0 +1,9 @@
+# Ignora arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Ignora arquivos de editor
+.vscode/
+.idea/
+*.swp
+*.swo
